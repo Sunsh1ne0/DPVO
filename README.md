@@ -1,18 +1,4 @@
 # Docker for Deep Patch Visual Odometry
-This repository produces a docker container for our paper:
-
-[Deep Patch Visual Odometry](https://arxiv.org/pdf/2208.04726.pdf) [(Source Code)](https://github.com/princeton-vl/DPVO)<br/>
-Zachary Teed, Lahav Lipson, Jia Deng<br/>
-
-```
-@article{teed2022deep,
-  title={Deep Patch Visual Odometry},
-  author={Teed, Zachary and Lipson, Lahav and Deng, Jia},
-  journal={arXiv preprint arXiv:2208.04726},
-  year={2022}
-}
-```
-
 
 ## Install Dependencies
 You can install Docker [here](https://docs.docker.com/engine/install/)
