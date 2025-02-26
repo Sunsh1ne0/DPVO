@@ -33,6 +33,7 @@ RUN conda env create -f environment.yml
 RUN bash ./download_models_and_data.sh
 
 COPY scripts/extract_traj.py /DPVO/extract_traj.py
+COPY plot.py /root/miniconda3/envs/dpvo/lib/python3.10/site-packages/evo/tools/plot.py
 
 # This command runs your application, comment out this line to compile only
 CMD ["bash"]
