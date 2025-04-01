@@ -15,6 +15,7 @@ from dpvo.stream import image_stream, video_stream
 from dpvo.utils import Timer
 
 import pickle
+import math
 
 SKIP = 0
 
@@ -22,6 +23,42 @@ def show_image(image, t=0):
     image = image.permute(1, 2, 0).cpu().numpy()
     cv2.imshow('image', image / 255.0)
     cv2.waitKey(t)
+    
+def clean_positions(positions):
+    positions = positions.clone()
+    N = positions.size(0)
+
+    def get_direction(v):
+        norm = torch.norm(v)
+        return v / norm if norm > 1e-6 else None
+
+    # Initialize first direction
+    i = 1
+    # init_vec = positions[1] - positions[0]
+    prev_dir = torch.Tensor([0, 1])
+
+    if prev_dir is None:
+        raise ValueError("Initial velocity vector must not be zero.")
+
+    for i in range(2, N):
+        curr_vec = positions[i] - positions[i-1]
+        curr_dir = get_direction(curr_vec)
+
+        if curr_dir is None:
+            # If velocity is zero, keep assigning the previous position
+            positions[i] = positions[i-1]
+            continue
+
+        dot_product = torch.dot(prev_dir, curr_dir).clamp(-1.0, 1.0)
+        angle = torch.acos(dot_product)
+        if abs(angle) >= math.pi / 2:
+            print(i)
+            print(np.rad2deg(angle))
+            positions[i] = positions[i-1]  # overwrite to remove flip
+        else:
+            prev_dir = curr_dir  # update only if direction is valid
+
+    return positions
 
 @torch.no_grad()
 def run(cfg, network, imagedir, calib, stride=1, skip=0, viz=False, timeit=False):
@@ -99,6 +136,7 @@ if __name__ == '__main__':
     if args.plot:
         Path("trajectory_plots").mkdir(exist_ok=True)
         coords = np.array([trajectory.positions_xyz[:, 0], trajectory.positions_xyz[:, 2]]).T
+        coords = clean_positions(torch.Tensor(coords))
         np.save(f'trajectory_plots/{args.name}.npy', coords)
         plot_trajectory(trajectory, title=f"DPVO Trajectory Prediction for {args.name}", filename=f"trajectory_plots/{args.name}.pdf")
 
