@@ -1,4 +1,5 @@
 import os
+import shutil
 from multiprocessing import Process, Queue
 from pathlib import Path
 
@@ -100,6 +101,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--network', type=str, default='dpvo.pth')
     parser.add_argument('--imagedir', type=str)
+    parser.add_argument('--output_dir', type=str)
     parser.add_argument('--calib', type=str)
     parser.add_argument('--name', type=str, help='name your run', default='result')
     parser.add_argument('--stride', type=int, default=2)
@@ -116,6 +118,11 @@ if __name__ == '__main__':
 
     cfg.merge_from_file(args.config)
     cfg.merge_from_list(args.opts)
+
+    output_dir = Path(args.output_dir)
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     print("Running with config...")
     print(cfg)
@@ -134,12 +141,8 @@ if __name__ == '__main__':
         file_interface.write_tum_trajectory_file(f"saved_trajectories/{args.name}.txt", trajectory)
 
     if args.plot:
-        Path("trajectory_plots").mkdir(exist_ok=True)
+        # Path("trajectory_plots").mkdir(exist_ok=True)
         coords = np.array([trajectory.positions_xyz[:, 0], trajectory.positions_xyz[:, 2]]).T
         coords = clean_positions(torch.Tensor(coords))
-        np.save(f'trajectory_plots/{args.name}.npy', coords)
-        plot_trajectory(trajectory, title=f"DPVO Trajectory Prediction for {args.name}", filename=f"trajectory_plots/{args.name}.pdf")
-
-
-        
-
+        np.save(str(output_dir / "trajectory.npy"), coords)
+        plot_trajectory(trajectory, title=f"DPVO Trajectory Prediction for {args.name}", filename=str(output_dir / "trajectory.pdf"))
