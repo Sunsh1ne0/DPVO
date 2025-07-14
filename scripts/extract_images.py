@@ -17,7 +17,10 @@ def main(rosbag_path: str,
     output_dir = Path(output_dir)
     
     if output_dir.exists():
+        print(f"Removing existing output directory: {output_dir}")
         shutil.rmtree(output_dir)
+    else:
+        print(f"Creating output directory: {output_dir}")
     output_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"Opening ROS bag: {rosbag_path}")
