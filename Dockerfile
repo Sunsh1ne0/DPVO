@@ -1,28 +1,36 @@
-ARG CUDA_VERSION
-FROM nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
+
 
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
 
-ENV PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/home/captain/miniconda3/bin:${PATH}"
 
-RUN apt-get update
-RUN apt-get install -y unzip sudo git
+RUN apt-get update && \
+    apt-get install -y unzip sudo git wget && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update
-RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+
+# Make non-root user
+RUN adduser --disabled-password --gecos '' captain \
+    && adduser captain sudo \
+    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER captain
+WORKDIR /home/captain/
+RUN chmod a+rwx /home/captain/
+
+
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && mkdir /root/.conda \
+    && mkdir .conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh 
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
 
-RUN apt-get update
 
 RUN git clone https://github.com/princeton-vl/DPVO.git --recursive
-COPY install_dpvo.sh /DPVO/install_dpvo.sh
-WORKDIR /DPVO
+COPY install_dpvo.sh /home/captain/DPVO/install_dpvo.sh
+WORKDIR /home/captain/DPVO
 
 RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip
 RUN unzip eigen-3.4.0.zip -d thirdparty
@@ -32,8 +40,7 @@ RUN conda env create -f environment.yml
 
 RUN bash ./download_models_and_data.sh
 
-COPY scripts/extract_traj.py /DPVO/extract_traj.py
-COPY plot.py /root/miniconda3/envs/dpvo/lib/python3.10/site-packages/evo/tools/plot.py
+COPY scripts/extract_traj.py /home/captain/DPVO/extract_traj.py
 
 # This command runs your application, comment out this line to compile only
 CMD ["bash"]
